@@ -18,6 +18,11 @@
     "bot"
   ],
   "devDependencies": {
+    "@types/node": "^16.11.9",
     "typescript": "^4.5.2"
+  },
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "grammy": "^1.4.0"
   }
 }
