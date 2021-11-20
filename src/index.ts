@@ -2,15 +2,26 @@ import dotenv from 'dotenv'
 import Werror from './lib/errors'
 import initBot from './bot/index'
 import setWebhook from './server'
+import connectToMongo from './lib/database/connect'
 
 dotenv.config()
 
 const token = process.env.BOT_TOKEN
 if (!token) {
-	throw new Werror('Not bot token specified')
+	throw new Werror('Bot token not specified')
+}
+const mongodbUrl = process.env.MONGODB
+if (!mongodbUrl) {
+	throw new Werror('Database connection url not specified')
 }
 
 void (async() => {
+	try {
+		await connectToMongo(mongodbUrl)
+	} catch (error) {
+		throw new Werror(error, 'Connecting to the database')
+	}
+
 	let bot
 	try {
 		bot = await initBot(token)
