@@ -25,14 +25,19 @@ void (async() => {
 		} catch (error) {
 			throw new Werror(error, 'Starting with webhook')
 		}
+		console.log('Webhook is set')
 	} else {
-		await bot.start({
+		void bot.start({
 			drop_pending_updates: true
 		})
 	}
-
 })()
 
-function getUrlForWebhook(): string | null {
-	throw new Error('Function not implemented.')
+function getUrlForWebhook() {
+	if (process.env.HEROKU_APP_NAME) {
+		return `https://${process.env.HEROKU_APP_NAME}.herokuapp.com`
+	} else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+		return `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER.toLowerCase()}.repl.co`
+	}
+	return undefined
 }
