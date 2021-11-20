@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "build": "tsc --build tsconfig.json",
-    "start": "node built/src/server"
+    "start": "node built/index"
   },
   "engines": {
     "node": ">=14.x"
