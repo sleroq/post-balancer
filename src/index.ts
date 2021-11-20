@@ -28,7 +28,7 @@ void (async() => {
 	} catch (error) {
 		throw new Werror(error, 'Initializing the bot')
 	}
-	
+
 	const urlForWebhook = getUrlForWebhook()
 	if (urlForWebhook) {
 		try {

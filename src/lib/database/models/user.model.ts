@@ -22,7 +22,7 @@ const userSchema = new Schema({
 	first_name:    String,
 	last_name:     String,
 	language_code: { type: String, default: 'en' },
-	
+
 	conversation_state: String,
 	default_channel_settings: { type: channelSettingsSchema, required: true },
 }, { timestamps: true })

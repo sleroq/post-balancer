@@ -68,7 +68,7 @@ interface ChannelSchema {
 	invite_link?:    string
 	linked_chat_id?: string
 	username?:       string
-	
+
 	settings:        ChannelSettings
 
 	createdAt:       Date
@@ -86,7 +86,7 @@ const channelSchema = new Schema({
 	invite_link:    String,
 	linked_chat_id: String,
 	username:       String,
-	
+
 	settings:       { type: channelSettingsSchema, required: true },
 }, { timestamps: true })
 
