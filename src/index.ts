@@ -27,6 +27,7 @@ void (async() => {
 		}
 		console.log('Webhook is set')
 	} else {
+		console.log('Url for not specified, starting polling')
 		void bot.start({
 			drop_pending_updates: true
 		})
