@@ -4,7 +4,9 @@
   "description": "",
   "scripts": {
     "build": "tsc --build tsconfig.json",
-    "start": "node built/index"
+    "start": "node built/index",
+    "lint": "npx eslint .",
+    "format": "npx eslint --fix ."
   },
   "engines": {
     "node": ">=14.x"
@@ -19,6 +21,9 @@
   ],
   "devDependencies": {
     "@types/node": "^16.11.9",
+    "@typescript-eslint/eslint-plugin": "^5.4.0",
+    "@typescript-eslint/parser": "^5.4.0",
+    "eslint": "^8.2.0",
     "typescript": "^4.5.2"
   },
   "dependencies": {
