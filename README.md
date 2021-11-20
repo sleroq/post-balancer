@@ -18,6 +18,8 @@
  - [x] Connection with database
  - [ ] Adding new channels
  - [ ] Changing settings
+ - [ ] Show current schedule
+ - [ ] Post Preview
  - [ ] Adding custom buttons
  - [ ] Post autodelete feature
  - [ ] i18n
