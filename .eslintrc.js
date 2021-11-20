@@ -38,6 +38,7 @@ module.exports = {
 			'error',
 			'as-needed'
 		],
+		'no-trailing-spaces': 'warn',
 		'@typescript-eslint/require-await': 'warn'
 	}
 }
