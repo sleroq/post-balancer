@@ -4,11 +4,11 @@ import initBot from './bot/index'
 
 dotenv.config()
 
-const token = process.env.BOT_TOKEN;
+const token = process.env.BOT_TOKEN
 if (!token) {
-  throw new Werror('Not bot token specified');
+	throw new Werror('Not bot token specified')
 }
 
 (async() => {
-  await initBot(token)
+	await initBot(token)
 })()

@@ -1,9 +1,9 @@
-import { Bot } from "grammy";
+import { Bot } from 'grammy'
 
 export default async function initBot(token: string) {
-  const bot = new Bot(token);
+	const bot = new Bot(token)
 
-  await bot.on("message", (ctx) => ctx.reply("Hi there!"));
+	await bot.on('message', (ctx) => ctx.reply('Hi there!'))
 
-  await bot.start();
+	await bot.start()
 }
