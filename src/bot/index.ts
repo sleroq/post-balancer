@@ -2,7 +2,7 @@ import { Bot, Context } from 'grammy'
 import { saveNewUser } from '../lib/database/queries'
 import Werror from '../lib/errors'
 
-export default async function initBot(token: string) {
+export default function initBot(token: string) {
 	const bot = new Bot(token)
 
 	bot.catch((error) => { console.error(error) })

@@ -24,7 +24,7 @@ void (async() => {
 
 	let bot
 	try {
-		bot = await initBot(token)
+		bot = initBot(token)
 	} catch (error) {
 		throw new Werror(error, 'Initializing the bot')
 	}
