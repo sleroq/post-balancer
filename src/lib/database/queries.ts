@@ -1,6 +1,7 @@
 import Werror from '../errors.js'
 
 import UserModel, { User } from './models/user.model.js'
+import ChannelModel, { Channel } from './models/channel.model.js'
 
 import { User as TelegramUser } from '@grammyjs/types/manage'
 
@@ -44,4 +45,15 @@ export async function getUser(user_id: number): Promise<User | null> {
 	}
 
 	return user
+}
+
+export async function getAllChannels(user_id: number): Promise<Channel[] | null> {
+	let channels
+	try {
+		channels = await ChannelModel.find({ owner_id: user_id })
+	} catch (error) {
+		throw new Werror('Getting channels by user id')
+	}
+
+	return channels
 }
