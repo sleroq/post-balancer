@@ -1,11 +1,14 @@
 import { Bot, Context } from 'grammy'
+import { parseMode } from '@grammyjs/parse-mode'
 import { saveNewUser } from '../lib/database/queries'
 import Werror from '../lib/errors'
 
 export default function initBot(token: string) {
 	const bot = new Bot(token)
-
+	
 	bot.catch((error) => { console.error(error) })
+
+	bot.api.config.use(parseMode('HTML'))
 
 	bot.command('start', async ctx => await handleStart(ctx))
 	bot.on('message', (ctx) => ctx.reply('Hi there!'))
