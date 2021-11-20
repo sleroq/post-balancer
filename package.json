@@ -1,0 +1,23 @@
+{
+  "name": "post-balancer",
+  "version": "0.0.1",
+  "description": "",
+  "scripts": {
+    "build": "tsc --build tsconfig.json",
+    "start": "node built/src/server"
+  },
+  "engines": {
+    "node": ">=14.x"
+  },
+  "license": "GPL2",
+  "keywords": [
+    "scheduler",
+    "post",
+    "balancer",
+    "telegram",
+    "bot"
+  ],
+  "devDependencies": {
+    "typescript": "^4.5.2"
+  }
+}
