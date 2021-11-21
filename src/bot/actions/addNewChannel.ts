@@ -10,6 +10,12 @@ import { getAllChannels, saveNewChannel } from '../../lib/database/queries'
 
 const newChannelRouter = new Router<SessionContext>(async ctx => {
 	if (ctx.callbackQuery) {
+		// answerCallbackQuery for stop loading on pressed button
+		try {
+			await ctx.answerCallbackQuery()
+		} catch (error) {
+			// logger.log(error)
+		}
 		switch (ctx.callbackQuery.data) {
 		case 'add_channel':
 			await handleAddChannelButton(ctx)
