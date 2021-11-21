@@ -21,9 +21,9 @@ interface ChannelSettingsSchema {
 	min_posts_per_week?: number
 	consider_weekends?:  boolean
 	consider_holidays?:  boolean
-	best_time?:          TimeIntervalSchema
+	best_time?:          TimeIntervalSchema[]
 	best_days?:          string[]
-	sleep_time?:         TimeIntervalSchema
+	sleep_time?:         TimeIntervalSchema[]
 	sleep_days?:         string[]
 	timezone_offset?:    number
 	add_buttons?:        boolean
@@ -36,9 +36,9 @@ export const channelSettingsSchema = new Schema({
 	min_posts_per_week: Number,
 	consider_weekends:  Boolean,
 	consider_holidays:  Boolean,
-	best_time:          timeIntervalSchema,
+	best_time:          [timeIntervalSchema],
 	best_days:          [String],
-	sleep_time:         timeIntervalSchema,
+	sleep_time:         [timeIntervalSchema],
 	sleep_days:         [String],
 	timezone_offset:    Number,
 	add_buttons:        Boolean,
@@ -56,17 +56,16 @@ const chatPhotoSchema = new Schema({
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ChatImage = ChatPhoto & Document<any, any, ChatPhoto>
-
+export type ChannelTypes = 'private' | 'group' | 'supergroup' | 'channel'
 interface ChannelSchema {
 	_id:             number
 	owner_id:        number
-	type:            'private' | 'group' | 'supergroup' | 'channel'
+	type:            ChannelTypes
 	title:           string
 	photo?:          ChatPhoto
-	bio?:            string
 	description?:    string
 	invite_link?:    string
-	linked_chat_id?: string
+	linked_chat_id?: number
 	username?:       string
 
 	settings:        ChannelSettings
@@ -81,10 +80,9 @@ const channelSchema = new Schema({
 	type:           { type: String, required: true },
 	title:          { type: String, required: true },
 	photo:          chatPhotoSchema,
-	bio:            String,
 	description:    String,
 	invite_link:    String,
-	linked_chat_id: String,
+	linked_chat_id: Number,
 	username:       String,
 
 	settings:       { type: channelSettingsSchema, required: true },
