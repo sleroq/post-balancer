@@ -44,7 +44,7 @@
    - [x] /start
    - [ ] /help
  - [x] Connection with database
- - [ ] Adding new channels
+ - [x] Adding new channels
  - [ ] Adding posts
  - [ ] Changing settings
  - [ ] Show current schedule
