@@ -1,7 +1,8 @@
 import express from 'express'
 import { Bot, webhookCallback } from 'grammy'
+import { SessionContext } from './bot'
 
-export default async function setWebhook(bot: Bot, urlForWebhook: string): Promise<void> {
+export default async function setWebhook(bot: Bot<SessionContext>, urlForWebhook: string): Promise<void> {
 	const server = express()
 	server.use(express.json())
 
