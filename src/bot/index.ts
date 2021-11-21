@@ -4,6 +4,7 @@ import { parseMode } from '@grammyjs/parse-mode'
 import { ChannelTypes } from '../lib/database/models/channel.model'
 
 import handleStart from './handlers/start'
+import newChannelRouter from './actions/addNewChannel'
 
 interface SessionData {
 	conversation_state: 'idle' | 'waiting for forward from channel'
@@ -28,7 +29,8 @@ export default function initBot(token: string) {
 	// Commands:
 	bot.command('start', async ctx => await handleStart(ctx))
 
-
+	// Routers:
+	bot.use(newChannelRouter)
 
 	return bot
 }
