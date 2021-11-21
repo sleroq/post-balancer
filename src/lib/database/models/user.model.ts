@@ -10,6 +10,7 @@ export interface UserSchema {
 	language_code: string
 
 	conversation_state?: string
+	default_channel_id?: number
 	default_channel_settings: ChannelSettings
 
 	createdAt:     Date
@@ -24,6 +25,7 @@ const userSchema = new Schema({
 	language_code: { type: String, default: 'en' },
 
 	conversation_state: String,
+	default_channel_id: Number,
 	default_channel_settings: { type: channelSettingsSchema, required: true },
 }, { timestamps: true })
 
