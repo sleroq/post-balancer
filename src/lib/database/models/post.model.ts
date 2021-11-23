@@ -33,16 +33,18 @@ export interface PostSchema {
 	createdAt:     Date
 	updatedAt:     Date
 }
-const postSchema = new Schema({
-	owner_id:            { type: Number, required: true },
-	chat_id:             { type: Number, required: true },
-	channels:            [Number],
-	channel_message_id:  Number,
-	received_message_id: { type: Number, required: true },
-	date:                { type: Number, required: true },
 
-	text:              String,
-	caption:           String,
+const messageSchema = new Schema({
+	post_id:             { type: String, required: true },
+	owner_id:            { type: Number, required: true },
+	sent_message_id:     Number,
+	received_message_id: { type: Number, required: true },
+	received_chat_id:    { type: Number, required: true },
+	received_date:       { type: Number, required: true },
+	sent_date:           Number,
+
+	text:                String,
+	caption:             String,
 	// entities:          [mentionSchema],
 	// caption_entities:  [mentionSchema],
 	// audio:             audioSchema,
@@ -50,6 +52,13 @@ const postSchema = new Schema({
 	// photo:             [photoSizeSchema],
 	// sticker:           stickerSchema,
 	// video:             videoScheme,
+})
+
+const postSchema = new Schema({
+	owner_id: { type: Number, required: true },
+	channels: [Number],
+	
+	messages: [messageSchema],
 }, { timestamps: true })
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
