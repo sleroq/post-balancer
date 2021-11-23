@@ -4,7 +4,7 @@ import { parseMode } from '@grammyjs/parse-mode'
 import { ChannelTypes } from '../lib/database/models/channel.model'
 
 import handleStart from './handlers/start'
-import newChannelRouter from './actions/addNewChannel'
+import newChannelRouter from './actions/add-new-channel'
 
 interface SessionData {
 	conversation_state: 'idle' | 'waiting for forward from channel'

@@ -2,19 +2,19 @@ import Werror from '../../lib/errors'
 
 import { Router } from '@grammyjs/router'
 import { SessionContext } from '..'
-import handleStart from '../handlers/start'
 import { GrammyError, InlineKeyboard } from 'grammy'
 import { Chat, ChatFromGetChat } from '@grammyjs/types'
-import { getAllChannels, saveNewChannel } from '../../lib/database/queries'
 
+import { getAllChannels, saveNewChannel } from '../../lib/database/queries'
+import handleStart from '../handlers/start'
 
 const newChannelRouter = new Router<SessionContext>(async ctx => {
 	if (ctx.callbackQuery) {
-		// answerCallbackQuery for stop loading on pressed button
+		// answerCallbackQuery() is needed to prevent infinite loading
 		try {
 			await ctx.answerCallbackQuery()
 		} catch (error) {
-			// logger.log(error)
+			// TODO: logger.log(error)
 		}
 		switch (ctx.callbackQuery.data) {
 		case 'add_channel':
