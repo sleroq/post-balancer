@@ -47,27 +47,38 @@ export default async function handleStart(ctx: SessionContext) {
 }
 
 async function getStartText(userId: number): Promise<string> {
+	let listOfChannels
+	try {
+		listOfChannels = await getChannelList(userId)
+	} catch (error) {
+		throw new Werror(error, 'Getting channel list for start message text')
+	}
+
+	if (listOfChannels)
+		return `
+Hello!
+Your channels:
+${listOfChannels}`
+	else
+		return `
+Hello!
+I can help you to schedule posts in your channel.
+You can connect me to your channel(s) to schedule posts by pressing button below!`
+}
+
+async function getChannelList(userId: number): Promise<string | null> {
 	let channels
 	try {
 		channels = await getAllChannels(userId)
 	} catch (error) {
 		throw new Werror('Getting all of user\'s channels')
 	}
+	if (!channels) return null
 
-	if (channels && channels.length) {
-		let listOfChannels = ''
-		channels.forEach(channel => {
-			listOfChannels += `\n- ${channel.title}`
-		})
+	let listOfChannels = ''
+	channels.forEach(channel => {
+		listOfChannels += ` - ${channel.title}\n`
+	})
 
-		return `
-Hello!
-You have ${channels.length} channels:${listOfChannels}`
-	} else {
-		return `
-Hello!
-I can help you to schedule posts in your channel.
-You can connect me to your channel(s) to schedule posts by pressing button below!`
-	}
-
+	return listOfChannels
 }
