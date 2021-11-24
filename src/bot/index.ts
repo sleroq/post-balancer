@@ -14,6 +14,7 @@ interface SessionData {
 		username?: string,
 		type:      ChannelTypes,
 	}
+	unsent_post_id?: string,
 	message_to_edit?: number
 }
 export type SessionContext = Context & SessionFlavor<SessionData>;
