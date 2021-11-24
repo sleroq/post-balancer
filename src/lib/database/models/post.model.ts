@@ -1,42 +1,17 @@
 // import { Audio, MessageEntity, Document as MessageDocument, PhotoSize, Sticker, Video, VideoNote, Voice, Contact, Game, Dice, Poll, Venue, ReplyKeyboardMarkup } from '@grammyjs/types'
 import { Schema, model, Document } from 'mongoose'
+export interface MessageSchema {
+	sent_message_id?:    number
+	received_message_id: number,
+	received_chat_id:    number,
+	received_date:       number,
+	sent_date?:          number,
 
-export interface PostSchema {
-	owner_id:            number
-	chat_id:             number
-	channels:            number[]
-	channel_message_id?: number
-	received_message_id: number
-	date:                number
-
-	text?:             string
-	caption?:          string
-	// entities?:         MessageEntity[]
-	// caption_entities?: MessageEntity[]
-	// animation?:        Animation
-	// audio?:            Audio
-	// document?:         MessageDocument
-	// photo?:            PhotoSize[]
-	// sticker?:          Sticker
-	// video?:            Video
-	// video_note?:       VideoNote
-	// voice?:            Voice
-	// contact?:          Contact
-	// dice?:             Dice
-	// game?:             Game
-	// poll?:             Poll
-	// venue?:            Venue
-	// location?:         Location
-
-	// reply_markup?:     ReplyKeyboardMarkup
-
-	createdAt:     Date
-	updatedAt:     Date
+	text?:               string,
+	caption?:            string,
 }
 
 const messageSchema = new Schema({
-	post_id:             { type: String, required: true },
-	owner_id:            { type: Number, required: true },
 	sent_message_id:     Number,
 	received_message_id: { type: Number, required: true },
 	received_chat_id:    { type: Number, required: true },
@@ -53,11 +28,20 @@ const messageSchema = new Schema({
 	// sticker:           stickerSchema,
 	// video:             videoScheme,
 })
+export interface PostSchema {
+	owner_id: number,
+	channels: number[],
+
+	messages:  MessageSchema[]
+
+	createdAt: Date
+	updatedAt: Date
+}
 
 const postSchema = new Schema({
 	owner_id: { type: Number, required: true },
-	channels: [Number],
-	
+	channels: { type: [Number], required: true },
+
 	messages: [messageSchema],
 }, { timestamps: true })
 
