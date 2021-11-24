@@ -4,6 +4,8 @@ import UserModel, { User } from './models/user.model.js'
 import ChannelModel, { Channel } from './models/channel.model.js'
 
 import { Chat, User as TelegramUser } from '@grammyjs/types/manage'
+import { Message } from '@grammyjs/types'
+import PostModel, { MessageSchema, Post } from './models/post.model.js'
 
 export async function saveNewUser(user: TelegramUser): Promise<User> {
 	let newUser
@@ -88,15 +90,15 @@ export async function saveNewChannel(
 	let channel
 	try {
 		channel = new ChannelModel({
-			_id:             chatInfo.id,
-			owner_id:        owner_id,
-			type:            chatInfo.type,
-			title:           chatInfo.title,
-			photo:           chatInfo.photo,
-			description:     chatInfo.description,
-			invite_link:     chatInfo.invite_link,
+			_id:         chatInfo.id,
+			owner_id:    owner_id,
+			type:        chatInfo.type,
+			title:       chatInfo.title,
+			photo:       chatInfo.photo,
+			description: chatInfo.description,
+			invite_link: chatInfo.invite_link,
 
-			settings:        user.default_channel_settings
+			settings:    user.default_channel_settings
 		})
 		if ('linked_chat_id' in chatInfo) channel.linked_chat_id = chatInfo.linked_chat_id
 		if ('username' in chatInfo) channel.username = chatInfo.username
@@ -110,10 +112,75 @@ export async function saveNewChannel(
 		throw new Werror(error, 'Saving new channel')
 	}
 
-	user.default_channel_id = chatInfo.id
-	try {
-		await user.save()
-	} catch (error) {
-		throw new Werror(error, 'Saving user')
+	if (!user.default_channel_id) {
+		user.default_channel_id = chatInfo.id
+		try {
+			await user.save()
+		} catch (error) {
+			throw new Werror(error, 'Saving user')
+		}
 	}
+}
+
+export async function saveNewMessage(message: Message, userId: number, unsent_post_id?: string, channelId?: number) {
+	let user
+	try {
+		user = await getUser(userId)
+	} catch (error) {
+		throw new Werror(error, 'Getting user to get default channel settings')
+	}
+	if (!user) throw new Werror('User is null!')
+	if (!channelId) channelId = user.default_channel_id
+	if (!channelId && unsent_post_id)
+		throw new Werror('Channel id is not provided and default channel id is not set!')
+
+	let post: Post
+	try {
+		post = await getNewPost(userId, unsent_post_id, channelId)
+	} catch (error) {
+		throw new Werror(error, 'Getting new post to add message to')
+	}
+
+	const messageRecord: MessageSchema = {
+		received_message_id: message.message_id,
+		received_chat_id:    message.chat.id,
+		received_date:       message.date,
+
+		text:    message.text,
+		caption: message.caption
+	}
+
+	post.messages.push(messageRecord)
+
+	try {
+		await post.save()
+	} catch (error) {
+		throw new Werror(error, 'Saving post with new message')
+	}
+}
+
+async function getNewPost(
+	owner_id: number,
+	unsent_post_id?: string,
+	channel_id?: number
+): Promise<Post> {
+	let post: Post | null
+	try {
+		post = await PostModel.findById(unsent_post_id)
+	} catch (error) {
+		throw new Werror(error, 'Searching for post')
+	}
+
+	if (!post && channel_id) throw new Werror('No channel_id was provided')
+
+	if (!post) {
+		post = new PostModel({
+			owner_id: owner_id,
+			channels: [channel_id],
+
+			messages: []
+		})
+	}
+
+	return post
 }
