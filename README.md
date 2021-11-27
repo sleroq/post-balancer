@@ -45,7 +45,7 @@
    - [ ] /help
  - [x] Connection with database
  - [x] Adding new channels
- - [ ] Adding posts
+ - [x] Adding posts
  - [ ] Changing settings
  - [ ] Show current schedule
  - [ ] Post Preview
