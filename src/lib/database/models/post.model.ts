@@ -33,6 +33,9 @@ export interface PostSchema {
 	owner_id: number
 	channels: number[]
 
+	sent_date?: Date
+	scheduled_sent_date?: Date
+
 	messages:  MessageSchema[]
 
 	createdAt: Date
@@ -42,6 +45,9 @@ export interface PostSchema {
 const postSchema = new Schema({
 	owner_id: { type: Number, required: true },
 	channels: { type: [Number], required: true },
+
+	sent_date: Date,
+	scheduled_sent_date: Date,
 
 	messages: [messageSchema],
 }, { timestamps: true })
