@@ -16,6 +16,8 @@ const newPostRouter = new Router<SessionContext>(async ctx => {
 	if (!channels) return
 
 	if (ctx.message.text === '/done') {
+		if (!ctx.session.unsent_post_id) return
+
 		ctx.session.unsent_post_id = undefined
 		try {
 			await ctx.reply('Ok!')
