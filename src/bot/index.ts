@@ -5,6 +5,7 @@ import { ChannelTypes } from '../lib/database/models/channel.model'
 
 import handleStart from './handlers/start'
 import newChannelRouter from './actions/add-new-channel'
+import newPostRouter from './actions/add-new-post'
 
 interface SessionData {
 	conversation_state: 'idle' | 'waiting for forward from channel'
@@ -32,6 +33,7 @@ export default function initBot(token: string) {
 
 	// Routers:
 	bot.use(newChannelRouter)
+	bot.use(newPostRouter)
 
 	return bot
 }
