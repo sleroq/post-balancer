@@ -3,7 +3,7 @@ import Werror from '../../lib/errors'
 import { Router } from '@grammyjs/router'
 import { SessionContext } from '..'
 
-import { getAllChannels } from '../../lib/database/queries'
+import { getAllChannels, saveNewMessage } from '../../lib/database/queries'
 
 const newPostRouter = new Router<SessionContext>(async ctx => {
 	if (!ctx.from || !ctx.message) return
@@ -16,7 +16,14 @@ const newPostRouter = new Router<SessionContext>(async ctx => {
 	if (!channels) return
 
 	if (ctx.message.text === '/done') {
-		
+		ctx.session.unsent_post_id = undefined
+		try {
+			await ctx.reply('Ok!')
+		} catch (error) {
+			throw new Werror(error, 'Replying that post is done')
+		}
+		return
+		// TODO: here should be schedule function
 	}
 	return ctx.session.conversation_state
 })
@@ -24,7 +31,19 @@ const newPostRouter = new Router<SessionContext>(async ctx => {
 newPostRouter.route('idle', async ctx => {
 	if (!ctx.from || !ctx.message) return
 
-	
+	let post_id
+	try {
+		post_id = await saveNewMessage(ctx.message, ctx.from.id, ctx.session.unsent_post_id)
+	} catch (error) {
+		throw new Werror(error, 'Saving new message')
+	}
+	ctx.session.unsent_post_id = post_id
+
+	try {
+		await ctx.reply('Message is added to new post.\nSend /done when post is ready.')
+	} catch (error) {
+		throw new Werror(error, 'Replying that message is saved')
+	}
 })
 
 export default newPostRouter
