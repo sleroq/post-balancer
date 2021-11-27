@@ -6,6 +6,7 @@ import { ChannelTypes } from '../lib/database/models/channel.model'
 import handleStart from './handlers/start'
 import newChannelRouter from './actions/add-new-channel'
 import newPostRouter from './actions/add-new-post'
+import handleSchedule from './handlers/schedule'
 
 interface SessionData {
 	conversation_state: 'idle' | 'waiting for forward from channel'
@@ -30,6 +31,9 @@ export default function initBot(token: string) {
 
 	// Commands:
 	bot.command('start', async ctx => await handleStart(ctx))
+
+	bot.command('posts', async ctx => await handleSchedule(ctx))
+	bot.command('schedule', async ctx => await handleSchedule(ctx))
 
 	// Routers:
 	bot.use(newChannelRouter)
