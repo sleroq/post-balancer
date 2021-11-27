@@ -122,7 +122,12 @@ export async function saveNewChannel(
 	}
 }
 
-export async function saveNewMessage(message: Message, userId: number, unsent_post_id?: string, channelId?: number) {
+export async function saveNewMessage(
+	message: Message,
+	userId: number,
+	unsent_post_id?: string,
+	channelId?: number
+): Promise<string> {
 	let user
 	try {
 		user = await getUser(userId)
@@ -157,12 +162,14 @@ export async function saveNewMessage(message: Message, userId: number, unsent_po
 	} catch (error) {
 		throw new Werror(error, 'Saving post with new message')
 	}
+
+	return post._id.toString()
 }
 
 async function getNewPost(
-	owner_id: number,
+	owner_id:        number,
 	unsent_post_id?: string,
-	channel_id?: number
+	channel_id?:     number
 ): Promise<Post> {
 	let post: Post | null
 	try {
@@ -171,7 +178,7 @@ async function getNewPost(
 		throw new Werror(error, 'Searching for post')
 	}
 
-	if (!post && channel_id) throw new Werror('No channel_id was provided')
+	if (!post && !channel_id) throw new Werror('No channel_id was provided')
 
 	if (!post) {
 		post = new PostModel({
