@@ -21,14 +21,13 @@ export default async function handleSchedule(ctx: SessionContext) {
 	try {
 		channel = await channelModel.findById(user.default_channel_id)
 	} catch (error) {
-		throw new Werror(error, 'Getting posts')
+		throw new Werror(error, 'Getting channel')
 	}
 
 	let posts
 	try {
 		posts = await postModel.find({
 			channel_id: user.default_channel_id,
-			owner_id: ctx.from.id,
 			sent_date: { $gt: new Date() }
 		})
 	} catch (error) {

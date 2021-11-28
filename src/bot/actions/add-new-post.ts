@@ -20,12 +20,24 @@ const newPostRouter = new Router<SessionContext>(async ctx => {
 
 		ctx.session.unsent_post_id = undefined
 		try {
-			await ctx.reply('Ok!')
+			await ctx.reply('Ok! Post is saved')
 		} catch (error) {
 			throw new Werror(error, 'Replying that post is done')
 		}
+
+		try {
+			await makeSchedule(ctx.from.id)
+		} catch (error) {
+			throw new Werror(error, 'Creating a schedule')
+		}
+
+		try {
+			await ctx.reply('Schedule rescheduled or something')
+		} catch (error) {
+			throw new Werror(error, 'Replying that post is done')
+		}
+
 		return
-		// TODO: here should be schedule function
 	}
 	return ctx.session.conversation_state
 })
