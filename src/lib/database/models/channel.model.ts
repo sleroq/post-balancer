@@ -15,33 +15,33 @@ const timeIntervalSchema = new Schema({
 export type TimeInterval = TimeIntervalSchema & Document<any, any, TimeIntervalSchema>
 
 interface ChannelSettingsSchema {
-	max_posts_per_day?:  number
-	min_posts_per_day?:  number
-	max_posts_per_week?: number
-	min_posts_per_week?: number
-	consider_weekends?:  boolean
-	consider_holidays?:  boolean
+	max_posts_per_day:   number
+	min_posts_per_day:   number
+	max_posts_per_week:  number
+	min_posts_per_week:  number
+	consider_weekends:   boolean
+	consider_holidays:   boolean
 	best_time?:          TimeIntervalSchema[]
 	best_days?:          string[]
 	sleep_time?:         TimeIntervalSchema[]
 	sleep_days?:         string[]
 	timezone_offset?:    number
-	add_buttons?:        boolean
+	add_buttons:         boolean
 }
 
 export const channelSettingsSchema = new Schema({
-	max_posts_per_day:  Number,
-	min_posts_per_day:  Number,
-	max_posts_per_week: Number,
-	min_posts_per_week: Number,
-	consider_weekends:  Boolean,
-	consider_holidays:  Boolean,
+	max_posts_per_day:  { type: Number, required: true },
+	min_posts_per_day:  { type: Number, required: true },
+	max_posts_per_week: { type: Number, required: true },
+	min_posts_per_week: { type: Number, required: true },
+	consider_weekends:  { type: Boolean, required: true },
+	consider_holidays:  { type: Boolean, required: true },
 	best_time:          [timeIntervalSchema],
 	best_days:          [String],
 	sleep_time:         [timeIntervalSchema],
 	sleep_days:         [String],
 	timezone_offset:    Number,
-	add_buttons:        Boolean,
+	add_buttons:        { type: Boolean, required: true },
 })
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
