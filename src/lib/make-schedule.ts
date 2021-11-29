@@ -1,4 +1,4 @@
-import channelModel from './database/models/channel.model'
+import channelModel, { Channel } from './database/models/channel.model'
 import postModel from './database/models/post.model'
 import { getUser } from './database/queries'
 import Werror from './errors'
@@ -45,6 +45,7 @@ export default async function makeSchedule(userId?: number, channelId?: number) 
 	} catch (error) {
 		throw new Werror(error, 'Trying to get latest sent post')
 	}
+	if (!lastPost) throw new Werror('Idk, throw error for now')
 	if (!lastPost.sent_date) throw new Werror('This is impossible or is it')
 
 	let thisDate = new Date()
@@ -60,31 +61,53 @@ export default async function makeSchedule(userId?: number, channelId?: number) 
 			continue
 		}
 
-		const maxMsBetweenPosts = ((24 * 60 * 60 * 1000) / channel.settings.max_posts_per_day)
-		const msLeft = differenceInMilliseconds(lastPost.sent_date, getNextDay(thisDate))
-		if (msLeft < maxMsBetweenPosts) {
-			thisDate = getNextDay(thisDate)
-			continue
-		}
+		// const maxMsBetweenPosts = ((24 * 60 * 60 * 1000) / channel.settings.max_posts_per_day)
+		// const msLeft = differenceInMilliseconds(lastPost.sent_date, getNextDay(thisDate))
+		// if (msLeft < maxMsBetweenPosts) {
+		// 	thisDate = getNextDay(thisDate)
+		// 	continue
+		// }
+
+		const fti = getFirstTimeInterval(channel)
+
+		console.log(fti)
 
 		postsScheduled++
 	}
+}
 
+interface TimeInterval {
+	since: { hours: number, minutes: number }
+	till:  { hours: number, minutes: number }
+	duration: number
+}
 
-	// const currentDay = new Date()
-	// let postsForCurrentDay: Post[] = []
-	// // let postsForCurrentWeek: Post[] = []
+function getFirstTimeInterval(channel: Channel): TimeInterval {
+	if (!channel.settings.sleep_time)
+		return {
+			since:    { hours: 0, minutes: 0 },
+			till:     { hours: 24, minutes: 0 },
+			duration: 24 * 60
+		}
 
-	// while (postsScheduled != posts.length) {
-	// 	let week
-	// }
+	const eAT: TimeInterval = {
+		since:    { hours: NaN, minutes: NaN },
+		till:     { hours: NaN, minutes: NaN },
+		duration: NaN
+	}
 
+	for (const interval of channel.settings.sleep_time) {
+		const hoursSince   = Number(interval.since.split(':')[0])
+		const minutesSince = Number(interval.since.split(':')[1])
 
-	// for (const post of posts) {
-	// 	if (postsForCurrentDay.length > channel.settings.max_posts_per_day) {
-	// 		currentDay.
-	// 	}
-	// }
+		if (hoursSince < eAT.since.hours)     eAT.since.hours   = hoursSince
+		if (minutesSince < eAT.since.minutes) eAT.since.minutes = minutesSince
+	}
+
+	// TODO: check if this works:
+	eAT.duration = (eAT.till.hours - eAT.since.hours) * 60 + +(eAT.till.minutes - eAT.since.minutes)
+
+	return eAT
 }
 
 function getNextMonday(date: Date) {
