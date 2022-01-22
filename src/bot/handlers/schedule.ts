@@ -8,12 +8,8 @@ import Werror from '../../lib/errors'
 export default async function handleSchedule(ctx: SessionContext) {
 	if (!ctx.from) return
 
-	let user
-	try {
-		user = await getUser(ctx.from.id)
-	} catch (error) {
-		throw new Werror(error, 'Getting user')
-	}
+	const user = await getUser(ctx.from.id)
+
 	if (!user) return
 	if (!user.default_channel_id) return
 
