@@ -19,11 +19,13 @@ interface SessionData {
 	unsent_post_id?: string,
 	message_to_edit?: number
 }
+
 export type SessionContext = Context & SessionFlavor<SessionData>;
 
 export default function initBot(token: string) {
 	const bot = new Bot<SessionContext>(token)
 
+	// TODO: log errors
 	bot.catch((error) => { console.error(error) })
 	bot.api.config.use(parseMode('HTML'))
 
