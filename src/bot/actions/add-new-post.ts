@@ -4,6 +4,7 @@ import { Router } from '@grammyjs/router'
 import { SessionContext } from '..'
 
 import { getAllChannels, saveNewMessage } from '../../lib/database/queries'
+import makeSchedule from '../../lib/make-schedule'
 
 const newPostRouter = new Router<SessionContext>(async ctx => {
 	if (!ctx.from || !ctx.message) return

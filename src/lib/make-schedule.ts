@@ -2,7 +2,7 @@ import channelModel, { Channel } from './database/models/channel.model'
 import postModel from './database/models/post.model'
 import { getUser } from './database/queries'
 import Werror from './errors'
-import { differenceInMilliseconds } from 'date-fns'
+// import { differenceInMilliseconds } from 'date-fns'
 
 export default async function makeSchedule(userId?: number, channelId?: number) {
 	if (!userId || !channelId) throw new Werror('Ether userId or channelId should be provided')
