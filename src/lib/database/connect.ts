@@ -1,5 +1,4 @@
 import Werror from '../errors'
-
 import mongoose from 'mongoose'
 
 export default async function connectToMongo(databaseUrl: string) {
