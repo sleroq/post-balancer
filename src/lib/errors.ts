@@ -9,9 +9,7 @@ export default class Werror extends Error {
 		} else if (typeof error === 'string') {
 			super(error)
 		} else {
-			// TODO: what was I thinking? shoud throw an error
-			console.error('error in Werror is not an instance of "Error"')
-			console.error(error)
+			throw new Error('Error is not an actual Error')
 		}
 	}
 }
