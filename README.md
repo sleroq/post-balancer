@@ -46,6 +46,7 @@
  - [x] Connection with database
  - [x] Adding new channels
  - [x] Adding posts
+ - [ ] Add tests
  - [ ] Changing settings
  - [ ] Show current schedule
  - [ ] Post Preview
