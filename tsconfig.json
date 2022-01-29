@@ -44,8 +44,7 @@
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
   "include": [
-    "src",
-    ".eslintrc.js"
+    "src"
   ],
   "exclude": ["built"]
 }
