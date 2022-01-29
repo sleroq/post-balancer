@@ -15,11 +15,7 @@ const newChannelRouter = new Router<SessionContext>(async ctx => {
 		try {
 			await ctx.answerCallbackQuery()
 		} catch (error) {
-			if (error instanceof Error) {
-				logger.warn(`Error, answering callback query: ${error.message}`)
-			} else {
-				throw error
-			}
+			logger.warn(`Error, answering callback query: ${String(error)}`)
 		}
 		switch (ctx.callbackQuery.data) {
 		case 'add_channel':
