@@ -26,7 +26,7 @@ export type SessionContext = Context & SessionFlavor<SessionData>;
 export default function initBot(token: string) {
 	const bot = new Bot<SessionContext>(token)
 
-	bot.catch((error) => { logger.error('Bot error: ' + JSON.stringify(error)) })
+	bot.catch((error) => { logger.error(error, 'Bot error') })
 	bot.api.config.use(parseMode('HTML'))
 
 	bot.use(session({ initial: (): SessionData => ({ conversation_state: 'idle' }) }))
