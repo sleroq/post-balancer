@@ -1,6 +1,7 @@
 import { Bot, Context, session, SessionFlavor } from 'grammy'
 import { parseMode } from '@grammyjs/parse-mode'
 
+import logger from '../lib/logger'
 import { ChannelTypes } from '../lib/database/models/channel.model'
 
 import handleStart from './handlers/start'
@@ -25,8 +26,7 @@ export type SessionContext = Context & SessionFlavor<SessionData>;
 export default function initBot(token: string) {
 	const bot = new Bot<SessionContext>(token)
 
-	// TODO: log errors
-	bot.catch((error) => { console.error(error) })
+	bot.catch((error) => { logger.error('Bot error: ' + JSON.stringify(error)) })
 	bot.api.config.use(parseMode('HTML'))
 
 	bot.use(session({ initial: (): SessionData => ({ conversation_state: 'idle' }) }))

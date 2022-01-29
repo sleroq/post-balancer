@@ -7,6 +7,7 @@ import { Chat, ChatFromGetChat } from '@grammyjs/types'
 
 import { getAllChannels, saveNewChannel } from '../../lib/database/queries'
 import handleStart from '../handlers/start'
+import logger from '../../lib/logger'
 
 const newChannelRouter = new Router<SessionContext>(async ctx => {
 	if (ctx.callbackQuery) {
@@ -14,7 +15,11 @@ const newChannelRouter = new Router<SessionContext>(async ctx => {
 		try {
 			await ctx.answerCallbackQuery()
 		} catch (error) {
-			// TODO: logger.log(error)
+			if (error instanceof Error) {
+				logger.warn(`Error, answering callback query: ${error.message}`)
+			} else {
+				throw error
+			}
 		}
 		switch (ctx.callbackQuery.data) {
 		case 'add_channel':
