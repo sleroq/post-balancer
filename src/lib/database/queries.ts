@@ -163,7 +163,7 @@ export async function saveNewMessage(
 		throw new Werror(error, 'Saving post with new message')
 	}
 
-	return post._id.toString()
+	return String(post._id)
 }
 
 async function getNewPost(
