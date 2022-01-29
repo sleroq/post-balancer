@@ -1,7 +1,9 @@
 import pino from 'pino'
 
 const options = {
-	timestamp: () => `,"time":"${String(new Date())}"`
+	timestamp: () => `,"time":"${String(new Date())}"`,
+	base: undefined,
+	nestedKey: 'nested'
 }
 
 export default pino(options, pino.destination({
