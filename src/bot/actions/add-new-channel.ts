@@ -153,7 +153,7 @@ async function checkRights(ctx: SessionContext, chatInfo: ChatFromGetChat) {
 	try {
 		messageToDelete = await ctx.api.sendMessage(
 			chatInfo.id,
-			'Test message, don\'t worry!',
+			i18n.t('add_channel.test_message'),
 			{ disable_notification: true }
 		)
 	} catch (error) {

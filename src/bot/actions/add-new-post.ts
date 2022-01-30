@@ -35,7 +35,7 @@ const newPostRouter = new Router<SessionContext>(async ctx => {
 		}
 
 		try {
-			await ctx.reply('Schedule rescheduled or something')
+			await ctx.reply(i18n.t('add_post.done'))
 		} catch (error) {
 			throw new Werror(error, 'Replying that post is done')
 		}

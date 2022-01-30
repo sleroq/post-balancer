@@ -31,6 +31,8 @@ add_post:
   message_added: |
     Message is added to new post.
     Send /done when post is ready.
+  done: Schedule rescheduled or something
+  test_message: Test message, don't worry!
 
 buttons:
   add_channel: Add channel
