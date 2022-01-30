@@ -38,6 +38,10 @@ module.exports = {
 			'error',
 			'as-needed'
 		],
+		'eol-last': [
+			'warn',
+			'never'
+		],
 		'no-trailing-spaces': 'warn',
 		'@typescript-eslint/require-await': 'warn'
 	}
