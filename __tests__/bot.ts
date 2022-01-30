@@ -5,3 +5,5 @@ function returnSomething() {
 it('first test', () => {
 	expect(returnSomething()).toBe(true)
 })
+
+// TODO: test locales
