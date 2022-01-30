@@ -1,0 +1,41 @@
+start_message:
+  first: |
+    Hello!
+    I can help you to schedule posts in your channel.
+    You can connect me to your channel(s) to schedule posts by pressing button below!
+  not_first: |
+    Hello!
+    Your channels:
+    {{list}}
+
+schedule:
+  no_posts: You have no posts scheduled yet
+  schedule_for: "Schedule for <b>{{channel_title}}</b>"
+  number_of_messages: "{{messages_length}} messages"
+
+add_channel:
+  channels_only: Sorry, I can work only with channels.
+  # TODO: add notice about "delete" right - bot can't access your old posts, and all of the code is open source
+  instructions: |
+    1. Add bot to the channel and give it rights to post and delete
+    2. Send me any post from this channel
+  no_rights: Please, give me rights to send, edit and delete messages, then forward any message again
+  already_added: Channel already added!
+  done: |
+    Done!
+    Here is list of all your channels:
+    {{list}}
+
+add_post:
+  post_saved: Ok! Post is saved.
+  message_added: |
+    Message is added to new post.
+    Send /done when post is ready.
+
+buttons:
+  add_channel: Add channel
+  cancel: Cancel
+
+unknown_error: |
+  Unknown error happened :c
+  Sorry!

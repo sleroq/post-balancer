@@ -3,6 +3,7 @@ import channelModel from '../../lib/database/models/channel.model'
 import postModel from '../../lib/database/models/post.model'
 import { getUser } from '../../lib/database/queries'
 import Werror from '../../lib/errors'
+import i18n from '../../lib/i18n'
 
 
 export default async function handleSchedule(ctx: SessionContext) {
@@ -32,16 +33,17 @@ export default async function handleSchedule(ctx: SessionContext) {
 
 	if (!posts || !posts.length || !channel) {
 		try {
-			await ctx.reply('You have no posts scheduled yet')
+			await ctx.reply(i18n.t('schedule.no_posts'))
 		} catch (error) {
 			throw new Werror(error, 'Replying no posts')
 		}
 		return
 	}
 
-	let messageText = `Schedule for <b>${channel.title}</b>`
+	// TODO: escape html tags from channel title.
+	let messageText = i18n.t('schedule.schedule_for', { channel_title: channel.title })
 	for (const post of posts) {
-		messageText += `\n- ${post.messages.length} messages`
+		messageText += `\n- ${i18n.t('number_of_messages', { messages_length: post.messages.length })}`
 	}
 
 	try {

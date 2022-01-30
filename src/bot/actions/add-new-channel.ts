@@ -5,9 +5,12 @@ import { SessionContext } from '..'
 import { GrammyError, InlineKeyboard } from 'grammy'
 import { Chat, ChatFromGetChat } from '@grammyjs/types'
 
-import { getAllChannels, saveNewChannel } from '../../lib/database/queries'
+import { saveNewChannel } from '../../lib/database/queries'
+import { getChannelList } from '../../lib/text-helpers'
 import handleStart from '../handlers/start'
 import logger from '../../lib/logger'
+
+import i18n from '../../lib/i18n'
 
 const newChannelRouter = new Router<SessionContext>(async ctx => {
 	if (ctx.callbackQuery) {
@@ -45,7 +48,7 @@ newChannelRouter.route('waiting for forward from channel', async (ctx) => {
 
 	if (chatInfo.type !== 'channel') {
 		try {
-			await ctx.reply('Sorry, I can work only with channels')
+			await ctx.reply(i18n.t('add_channel.channels_only'))
 		} catch (error) {
 			throw new Werror(error, 'Replying bot work only with channels')
 		}
@@ -71,15 +74,11 @@ export default newChannelRouter
 
 export async function handleAddChannelButton(ctx: SessionContext) {
 	const inlineKeyboard = new InlineKeyboard()
-		.text('Cancel', 'back_to_start')
-
-	// Todo add notice about "delete" right - bot cant really access your old posts, and all of the code is open source
-	const messageText = '1. Add bot to the channel and give it rights to post and delete\n' +
-		'2. Send me any post from this channel'
+		.text(i18n.t('buttons.cancel'), 'back_to_start')
 
 	let sentMessage
 	try {
-		sentMessage = await ctx.editMessageText(messageText, {
+		sentMessage = await ctx.editMessageText(i18n.t('add_channel.instructions'), {
 			reply_markup: inlineKeyboard
 		})
 	} catch (error) {
@@ -94,11 +93,11 @@ export async function handleAddChannelButton(ctx: SessionContext) {
 
 async function replyGiveMeRights(ctx: SessionContext) {
 	const inlineKeyboard = new InlineKeyboard()
-		.text('Cancel', 'back_to_start')
+		.text(i18n.t('buttons.cancel'), 'back_to_start')
 
 	try {
 		await ctx.reply(
-			'Please, give me rights to send, edit and delete messages, then forward any message again',
+			i18n.t('add_channel.no_rights'),
 			{ reply_markup: inlineKeyboard }
 		)
 	} catch (error) {
@@ -116,7 +115,7 @@ async function saveAndFinish(
 	} catch (error) {
 		if (error instanceof Error && error.message.includes('E11000 duplicate key error collection')) {
 			try {
-				await ctx.reply('Channel already added!')
+				await ctx.reply(i18n.t('add_channel.already_added'))
 			} catch (e) {
 				throw new Werror(e, 'Replying channel already added')
 			}
@@ -125,7 +124,7 @@ async function saveAndFinish(
 
 		const wrappedError = new Werror(error, 'Saving new Channel')
 		try {
-			await ctx.reply('Unknown error happened :c\nSorry!')
+			await ctx.reply(i18n.t('unknown_error'))
 		} catch (e) {
 			throw new Werror(wrappedError, 'Replying sorry')
 		}
@@ -134,19 +133,14 @@ async function saveAndFinish(
 	}
 
 	try {
-		let messageText = 'Done!\nHere is list of all your channels:'
-		let channels
+		let listOfChannels
 		try {
-			channels = await getAllChannels(userId)
+			listOfChannels = await getChannelList(userId)
 		} catch (error) {
-			throw new Werror('Getting all of user\'s channels')
+			throw new Werror(error, 'Getting channel list')
 		}
 
-		if (!channels) throw new Werror('Just saved new channel, but channels is null')
-
-		channels.forEach(channel => {
-			messageText += '\n - ' + channel.title
-		})
+		const messageText = i18n.t('add_channel.done', { list: listOfChannels })
 
 		await ctx.reply(messageText)
 	} catch (error) {

@@ -6,6 +6,8 @@ import { SessionContext } from '..'
 import { getAllChannels, saveNewMessage } from '../../lib/database/queries'
 import makeSchedule from '../../lib/make-schedule'
 
+import i18n from '../../lib/i18n'
+
 const newPostRouter = new Router<SessionContext>(async ctx => {
 	if (!ctx.from || !ctx.message) return
 	let channels
@@ -21,7 +23,7 @@ const newPostRouter = new Router<SessionContext>(async ctx => {
 
 		ctx.session.unsent_post_id = undefined
 		try {
-			await ctx.reply('Ok! Post is saved')
+			await ctx.reply(i18n.t('add_post.post_saved'))
 		} catch (error) {
 			throw new Werror(error, 'Replying that post is done')
 		}
@@ -55,7 +57,7 @@ newPostRouter.route('idle', async ctx => {
 	ctx.session.unsent_post_id = post_id
 
 	try {
-		await ctx.reply('Message is added to new post.\nSend /done when post is ready.')
+		await ctx.reply(i18n.t('add_post.message_added'))
 	} catch (error) {
 		throw new Werror(error, 'Replying that message is saved')
 	}

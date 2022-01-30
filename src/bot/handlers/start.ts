@@ -1,9 +1,11 @@
 import Werror from '../../lib/errors'
 
 import { SessionContext } from '..'
-import { getAllChannels, saveNewUser } from '../../lib/database/queries'
+import { saveNewUser } from '../../lib/database/queries'
+import { getChannelList } from '../../lib/text-helpers'
 import { InlineKeyboard } from 'grammy'
 
+import i18n from '../../lib/i18n'
 
 export default async function handleStart(ctx: SessionContext) {
 	if (!ctx.from) return
@@ -15,7 +17,7 @@ export default async function handleStart(ctx: SessionContext) {
 	}
 
 	const inlineKeyboard = new InlineKeyboard()
-		.text('Add channel', 'add_channel')
+		.text(i18n.t('buttons.add_channel'), 'add_channel')
 
 	let messageText
 	try {
@@ -55,30 +57,7 @@ async function getStartText(userId: number): Promise<string> {
 	}
 
 	if (listOfChannels)
-		return `
-Hello!
-Your channels:
-${listOfChannels}`
+		return i18n.t('start_message.not_first', { list: listOfChannels })
 	else
-		return `
-Hello!
-I can help you to schedule posts in your channel.
-You can connect me to your channel(s) to schedule posts by pressing button below!`
-}
-
-async function getChannelList(userId: number): Promise<string | null> {
-	let channels
-	try {
-		channels = await getAllChannels(userId)
-	} catch (error) {
-		throw new Werror('Getting all of user\'s channels')
-	}
-	if (!channels) return null
-
-	let listOfChannels = ''
-	channels.forEach(channel => {
-		listOfChannels += ` - ${channel.title}\n`
-	})
-
-	return listOfChannels
+		return i18n.t('start_message.first')
 }
