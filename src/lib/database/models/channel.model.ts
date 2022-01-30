@@ -1,7 +1,7 @@
 import { Schema, model, Document } from 'mongoose'
 import { ChatPhoto } from '@grammyjs/types/manage'
 
-interface TimeIntervalSchema {
+export interface TimeIntervalSchema {
 	since: string
 	till:  string
 }
@@ -22,9 +22,9 @@ interface ChannelSettingsSchema {
 	consider_weekends:   boolean
 	consider_holidays:   boolean
 	best_time?:          TimeIntervalSchema[]
-	best_days?:          string[]
+	best_days?:          number[]
 	sleep_time?:         TimeIntervalSchema[]
-	sleep_days?:         string[]
+	sleep_days?:         number[]
 	timezone_offset?:    number
 	add_buttons:         boolean
 }
@@ -37,9 +37,9 @@ export const channelSettingsSchema = new Schema({
 	consider_weekends:  { type: Boolean, required: true },
 	consider_holidays:  { type: Boolean, required: true },
 	best_time:          [timeIntervalSchema],
-	best_days:          [String],
+	best_days:          [Number],
 	sleep_time:         [timeIntervalSchema],
-	sleep_days:         [String],
+	sleep_days:         [Number],
 	timezone_offset:    Number,
 	add_buttons:        { type: Boolean, required: true },
 })
