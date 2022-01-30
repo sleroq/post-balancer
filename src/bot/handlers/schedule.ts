@@ -25,10 +25,11 @@ export default async function handleSchedule(ctx: SessionContext) {
 	try {
 		posts = await postModel.find({
 			channel_id: user.default_channel_id,
-			sent_date: { $gt: new Date() }
+			sent_date: undefined
+			// scheduled_sent_date: { $gt: new Date() }
 		})
 	} catch (error) {
-		throw new Werror(error, 'Getting posts')
+		throw new Werror(error, 'Getting scheduled posts')
 	}
 
 	if (!posts || !posts.length || !channel) {
@@ -41,9 +42,18 @@ export default async function handleSchedule(ctx: SessionContext) {
 	}
 
 	// TODO: escape html tags from channel title.
-	let messageText = i18n.t('schedule.schedule_for', { channel_title: channel.title })
+	let messageText = i18n.t('schedule.schedule_for', { channel_title: channel.title, link: channel.username })
 	for (const post of posts) {
-		messageText += `\n- ${i18n.t('number_of_messages', { messages_length: post.messages.length })}`
+		const scheduledDate = post.scheduled_sent_date
+			? i18n.t('full_date', {
+				month: post.scheduled_sent_date.getUTCMonth(),
+				day: post.scheduled_sent_date.getUTCDate(),
+				year: post.scheduled_sent_date.getUTCFullYear(),
+				hours: post.scheduled_sent_date.getUTCHours(),
+				minutes: post.scheduled_sent_date.getUTCMinutes()
+			})
+			: 'not scheduled'
+		messageText += `\n- <code>${scheduledDate}</code> - ${i18n.t('schedule.number_of_messages', { messages_length: post.messages.length })}`
 	}
 
 	try {

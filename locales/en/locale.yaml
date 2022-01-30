@@ -38,6 +38,8 @@ buttons:
   add_channel: Add channel
   cancel: Cancel
 
+full_date: "{{month}}.{{day}}.{{year}} {{hours}}:{{minutes}} (UTC)"
+
 unknown_error: |
   Unknown error happened :c
   Sorry!
