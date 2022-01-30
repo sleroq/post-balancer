@@ -47,8 +47,14 @@
  - [x] Adding new channels
  - [x] Adding posts
  - [ ] Add tests
- - [ ] Changing settings
- - [ ] Show current schedule
+ - [ ] Settings
+ - [ ] Creating schedule
+  - [x] Schedule one day
+  - [ ] Schedule one week
+  - [ ] Schedule all of the posts
+  - [ ] Optional random
+  - [ ] Considering preferred time intervals
+ - [x] Show current schedule
  - [ ] Post Preview
  - [ ] Adding custom buttons
  - [ ] Post autodelete feature
