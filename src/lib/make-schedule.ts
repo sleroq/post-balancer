@@ -1,12 +1,17 @@
 import channelModel, { ChannelSettings, TimeIntervalSchema } from './database/models/channel.model'
 import postModel, { Post } from './database/models/post.model'
 import { getUser } from './database/queries'
+
 import Werror from './errors'
+import parentLogger from './logger'
+const logger = parentLogger.child({
+	module: 'make-schedule'
+})
 // import { differenceInMilliseconds } from 'date-fns'
 
 export default async function makeSchedule(userId?: number, channelId?: number) {
-	if (!userId || !channelId) throw new Werror('Either userId or channelId should be provided')
-	if (!channelId) {
+	if (!userId && !channelId) throw new Werror('Either userId or channelId should be provided')
+	if (!channelId && userId) {
 		const user = await getUser(userId)
 		if (!user) throw new Werror('Cant find this user in DB')
 		if (!user.default_channel_id)
@@ -27,13 +32,14 @@ export default async function makeSchedule(userId?: number, channelId?: number) 
 	try {
 		posts = await postModel.find({
 			channel_id: channelId,
-			scheduled_sent_date: { $gt: new Date() }
+			sent_date: undefined
 		})
 	} catch (error) {
 		throw new Werror(error, 'Getting posts')
 	}
-	if (!posts || !posts.length) throw new Werror('There is no posts scheduled')
+	if (!posts || !posts.length) throw new Werror('There is no posts to schedule')
 
+	logger.debug(`posts.length: ${posts.length}`)
 
 	// Get date of last post:
 	let lastPostSentDate: Date
@@ -46,12 +52,16 @@ export default async function makeSchedule(userId?: number, channelId?: number) 
 	if (!lastPost) lastPostSentDate = new Date(Number(new Date()) - 1000 * 100000 * 100) // Long time ago
 	else lastPostSentDate = lastPost.sent_date || new Date(Number(new Date()) - 1000 * 100000 * 100)
 
+	logger.debug(`lastPostSentDate: ${String(lastPostSentDate)}`)
+	logger.debug(`channel.settings.max_posts_per_day: ${channel.settings.max_posts_per_day}`)
 
 	let now = new Date()
 
 	// If posts less then in one day - schedule for one day
 	// TODO: check how many already posted today and what percent of avalible time is left
 	if (posts.length < channel.settings.max_posts_per_day) {
+		logger.debug('creating a schedule only for one day')
+
 		while (channel.settings.sleep_days
 			&& channel.settings.sleep_days.includes(now.getDay())) {
 			now = getNextDay(now)
@@ -96,6 +106,9 @@ async function scheduleForOneDay(now: Date, lastPostSentDate: Date, settings: Ch
 
 	const intervals = sleepTime.map(interval => parseTimeIntervalToday(interval, now))
 
+	logger.debug({ sleepTime }, 'Raw intervals')
+	logger.debug({ intervals }, 'Parsed intervals')
+
 	// Sort intervals by time; TODO: do this when adding intervals
 	intervals.sort((first, second) => Number(first.till) - Number(second.since))
 
@@ -106,38 +119,45 @@ async function scheduleForOneDay(now: Date, lastPostSentDate: Date, settings: Ch
 	const availIntvls: parsedInterval[] = []
 
 	intervals.forEach((interval, index) => {
-		const nextInterval = sleepTime[index + 1]
+		const nextInterval = intervals[index + 1]
 
+		logger.debug({ interval }, 'first interval')
+		logger.debug({ nextInterval }, 'nextInterval')
 		// Skip past intervals
-		if (nextInterval && Number(nextInterval.since) < Number(now)) return
+		if (nextInterval && Number(nextInterval.since) < Number(now)) {
+			logger.debug({ interval, nextInterval }, 'skip!')
+			return
+		}
 
 		if (index === 0 && Number(now) < Number(interval.since)) {
 			const availTimeMs = Number(interval.since) - Number(now)
+			logger.debug('add ' + String(availTimeMs / 1000 / 60))
 			availibleRough += availTimeMs
 		}
 
 		if (nextInterval) {
 			const nextSince = Number(now) > Number(nextInterval.since) ? now : nextInterval.since
 			const availTimeMs = Number(nextSince) - Number(interval.till)
+			logger.debug('add ' + String(availTimeMs / 1000 / 60))
 			availibleRough += availTimeMs
 		} else {
 			const endOfTheDay = new Date(Number(now))
-			endOfTheDay.setHours(23)
-			endOfTheDay.setMinutes(59)
-			endOfTheDay.setSeconds(59)
-			endOfTheDay.setMilliseconds(999)
+			endOfTheDay.setUTCHours(23, 59, 59, 999)
 
 			const availTimeMs = Number(endOfTheDay) - Number(interval.till)
+			logger.debug('add ' + String(availTimeMs / 1000 / 60))
 			availibleRough += availTimeMs
 		}
 	})
+
+	logger.debug(`availibleRough: ${availibleRough / 1000 / 60}`)
 
 	// Incase availible interval is too small
 	intervals.forEach((interval, index) => {
 		const nextInterval = intervals[index + 1]
 
 		// Skip past intervals
-		if (nextInterval && Number(nextInterval.since) < Number(now)) return
+		if (nextInterval && (Number(nextInterval.since) < Number(now))) return
 
 		if (index === 0 && Number(now) < Number(interval.since)) {
 			const availTimeMs = Number(interval.since) - Number(now)
@@ -163,10 +183,7 @@ async function scheduleForOneDay(now: Date, lastPostSentDate: Date, settings: Ch
 			}
 		} else {
 			const endOfTheDay = new Date(Number(now))
-			endOfTheDay.setHours(23)
-			endOfTheDay.setMinutes(59)
-			endOfTheDay.setSeconds(59)
-			endOfTheDay.setMilliseconds(999)
+			endOfTheDay.setUTCHours(23, 59, 59, 999)
 
 			const availTimeMs = Number(endOfTheDay) - Number(interval.till)
 			if (availTimeMs > (availibleRough / posts.length) / 4) {
@@ -178,6 +195,9 @@ async function scheduleForOneDay(now: Date, lastPostSentDate: Date, settings: Ch
 			}
 		}
 	})
+
+	logger.debug(`availibleReal: ${availibleReal / 1000 / 60}`)
+	logger.debug({availIntvls}, 'Available intervals')
 
 	/*
 		TODO: add preferred time intervals
@@ -222,16 +242,21 @@ interface parsedInterval {
 
 function parseTimeIntervalToday(interval: TimeIntervalSchema, now: Date): parsedInterval {
 	const dateSince = new Date(Number(now))
-	dateSince.setHours(Number(interval.since.split(':')[0]))
-	dateSince.setMinutes(Number(interval.since.split(':')[1]))
-	dateSince.setSeconds(0)
-	dateSince.setMilliseconds(0)
+
+	dateSince.setUTCHours(
+		Number(interval.since.split(':')[0]),
+		Number(interval.since.split(':')[1]),
+		0,
+		0
+	)
 
 	const dateTill = new Date(Number(now))
-	dateTill.setHours(Number(interval.till.split(':')[0]))
-	dateTill.setMinutes(Number(interval.till.split(':')[1]))
-	dateTill.setSeconds(0)
-	dateTill.setMilliseconds(0)
+	dateTill.setUTCHours(
+		Number(interval.till.split(':')[0]),
+		Number(interval.till.split(':')[1]),
+		0,
+		0
+	)
 
 	return { since: dateSince, till: dateTill }
 }
@@ -273,7 +298,7 @@ function parseTimeIntervalToday(interval: TimeIntervalSchema, now: Date): parsed
 // function getNextMonday(date: Date) {
 // 	const day = date.getDay()
 
-// 	date.setHours(0)
+// 	date.setHours(0) // WARN UTC
 // 	date.setMinutes(0)
 // 	date.setSeconds(0)
 // 	date.setMilliseconds(0)
@@ -288,13 +313,8 @@ function parseTimeIntervalToday(interval: TimeIntervalSchema, now: Date): parsed
 
 function getNextDay(date: Date): Date {
 	const newDate = new Date(Number(date))
-	newDate.setDate(date.getDate() + 1)
-
-	newDate.setHours(0)
-	newDate.setMinutes(0)
-	newDate.setSeconds(0)
-	newDate.setMilliseconds(0)
-
+	newDate.setUTCDate(date.getDate() + 1)
+	newDate.setUTCHours(0, 0, 0, 0)
 	return newDate
 }
 
@@ -314,7 +334,7 @@ function getNextDay(date: Date): Date {
 // async function sentThisDay(date: Date, channelId: number): Promise<number> {
 // 	const startOfTheDay = date
 
-// 	startOfTheDay.setHours(0)
+// 	startOfTheDay.setHours(0) // WARN UTC
 // 	startOfTheDay.setMinutes(0)
 // 	startOfTheDay.setSeconds(0)
 // 	startOfTheDay.setMilliseconds(0)
@@ -332,7 +352,7 @@ function getNextDay(date: Date): Date {
 // function getPreviousMonday(date: Date): Date {
 // 	const day = date.getDay()
 
-// 	date.setHours(0)
+// 	date.setHours(0) // WARN UTC
 // 	date.setMinutes(0)
 // 	date.setSeconds(0)
 // 	date.setMilliseconds(0)
