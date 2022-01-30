@@ -33,9 +33,9 @@ export async function saveNewUser(user: TelegramUser): Promise<User> {
 				min_posts_per_week: 40,
 				consider_weekends:  true,
 				consider_holidays:  true,
-				best_time:          [{ since: '18:30', till: '22:00' }], // TODO should be undefined
-				sleep_time:         [{ since: '00:00', till: '6:00' }],  // TODO should be undefined
-				timezone_offset:    3,                                   // TODO should be zero
+				best_time:          [{ since: '18:30', till: '22:00' }], // TODO: should be undefined
+				sleep_time:         [{ since: '00:00', till: '6:00' }],  // TODO: should be undefined
+				timezone_offset:    3,                                   // TODO: should be zero
 				add_buttons:        false,
 			}
 		})

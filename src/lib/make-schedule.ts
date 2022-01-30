@@ -7,7 +7,7 @@ import Werror from './errors'
 export default async function makeSchedule(userId?: number, channelId?: number) {
 	if (!userId || !channelId) throw new Werror('Ether userId or channelId should be provided')
 	if (!channelId) {
-		const	user = await getUser(userId)
+		const user = await getUser(userId)
 		if (!user) throw new Werror('Cant find this user in DB')
 		if (!user.default_channel_id)
 			throw new Werror('No channel id provided')
