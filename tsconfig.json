@@ -45,6 +45,7 @@
   },
   "include": [
     "src",
+    "__tests__",
     ".eslintrc.js"
   ],
   "exclude": ["built"]
