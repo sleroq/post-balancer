@@ -64,7 +64,7 @@ export async function getUser(user_id: number): Promise<User | null> {
 	return user
 }
 
-export async function getAllChannels(user_id: number): Promise<Channel[] | null> {
+export async function getAllChannels(user_id: number): Promise<Channel[]> {
 	let channels
 	try {
 		channels = await ChannelModel.find({ owner_id: user_id })
