@@ -1,3 +1,5 @@
+# https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html
+
 start_message:
   first: |
     Hello!
