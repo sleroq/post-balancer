@@ -6,6 +6,9 @@ import connectToMongo from './lib/database/connect'
 
 dotenv.config()
 
+// No timezones. Only UTC
+process.env.TZ = 'Europe/London'
+
 const token = process.env.BOT_TOKEN
 if (!token) {
 	throw new Werror('Bot token not specified')
