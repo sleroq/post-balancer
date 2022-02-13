@@ -7,8 +7,10 @@ import parentLogger from './logger'
 const logger = parentLogger.child({
 	module: 'make-schedule'
 })
-// import { differenceInMilliseconds } from 'date-fns'
 
+import { addDays, startOfDay, isAfter, differenceInMilliseconds, nextDay, differenceInDays, previousMonday, isBefore } from 'date-fns'
+
+// This function thinks we are in London
 export default async function makeSchedule(userId?: number, channelId?: number) {
 	if (!userId && !channelId) throw new Werror('Either userId or channelId should be provided')
 	if (!channelId && userId) {
@@ -41,171 +43,148 @@ export default async function makeSchedule(userId?: number, channelId?: number) 
 
 	logger.debug(`posts.length: ${posts.length}`)
 
-	// Get date of last post:
-	let lastPostSentDate: Date
-	let lastPost
+
+	const now = new Date()
+	const weekAgo = new Date(previousMonday(now).setUTCHours(0,0,0,0))
+
+	let postedThisWeek: Post[] | undefined
+
 	try {
-		lastPost = await postModel.findOne({ channel_id: channelId }, {}, { sort: { sent_date: -1 } })
+		postedThisWeek = await postModel.find(
+			{
+				channel_id: channelId,
+				sent_date: { $gt: weekAgo }
+			},
+			{},
+			{ sort: { sent_date: -1 } })
 	} catch (error) {
-		throw new Werror(error, 'Trying to get latest sent post')
+		throw new Werror(error, 'Getting posts for last week')
 	}
-	if (!lastPost) lastPostSentDate = new Date(Number(new Date()) - 1000 * 100000 * 100) // Long time ago
-	else lastPostSentDate = lastPost.sent_date || new Date(Number(new Date()) - 1000 * 100000 * 100)
+
+	if (!postedThisWeek) postedThisWeek = []
+
+	const postedToday = postedThisWeek.filter(post => {
+		return Number(post.sent_date) > new Date(now.getTime()).setUTCHours(0, 0, 0, 0)
+	})
+
+	const lastPostSentDate = postedToday[postedToday.length - 1]?.sent_date || new Date('1/1/2020')
 
 	logger.debug(`lastPostSentDate: ${String(lastPostSentDate)}`)
-	logger.debug(`channel.settings.max_posts_per_day: ${channel.settings.max_posts_per_day}`)
+	logger.debug(`settings.max_posts_per_day: ${channel.settings.max_posts_per_day}`)
 
-	let now = new Date()
+	// Schedule by iterating through weeks
+	const weeksToSchedule = posts.length / channel.settings.max_posts_per_week
+	const sleep_days = channel.settings.sleep_days || []
+	let currentWeek = new Date(now.getTime())
+	const max_per_week = channel.settings.max_posts_per_week
+	const max_per_day = channel.settings.max_posts_per_day
 
-	// If posts less then in one day - schedule for one day
-	// TODO: check how many already posted today and what percent of avalible time is left
-	if (posts.length < channel.settings.max_posts_per_day) {
-		logger.debug('creating a schedule only for one day')
+	for (let i = 0; i < weeksToSchedule; i++) {
 
-		while (channel.settings.sleep_days
-			&& channel.settings.sleep_days.includes(now.getDay())) {
-			now = getNextDay(now)
+		// For 1st week
+		if (i === 0 && postedThisWeek.length < max_per_week) {
+
+			// We need to know if there any time left for the posts
+			let freeDays = Math.abs(differenceInDays(currentWeek, nextDay(currentWeek, 1)))
+			sleep_days.forEach(sd => {
+				if (sd >= currentWeek.getDay())
+					freeDays = freeDays - 1
+			})
+
+			if (freeDays > 1) {
+				if (freeDays < 2 && channel.settings.sleep_time) {
+					const intervals = channel.settings.sleep_time.map(interval => parseTimeIntervalToday(interval, currentWeek))
+
+					let newDayFreeTime = 0
+					freeTimeInNewDay(intervals, currentWeek).forEach((interval) => {
+						newDayFreeTime += differenceInMilliseconds(interval.since, interval.till)
+					})
+
+					let freeTime = 0
+					getFreeIntervals(intervals, currentWeek).forEach((interval) => {
+						freeTime += differenceInMilliseconds(interval.since, interval.till)
+					})
+
+					const numberOfPosts = Math.round(freeTime / (newDayFreeTime / max_per_day))
+
+					if (numberOfPosts > 0) {
+						await scheduleForOneDay(currentWeek, channel.settings, posts.splice(0, numberOfPosts))
+					}
+				} else { // TODO: tests tests teests TESTSTS
+					const numberOfPosts = max_per_day * freeDays
+
+					await scheduleForOneDay(currentWeek, channel.settings, posts.splice(0, numberOfPosts))
+				}
+			}
+
+			currentWeek = nextDay(currentWeek, 1)
+			continue
 		}
-		await scheduleForOneDay(now, lastPostSentDate, channel.settings, posts)
-	} else {
-		throw new Werror('Can\'t do this yet')
-		// if (posts.length > channel.settings.max_posts_per_week) {
-		// 	posts = posts.slice(0, channel.settings.max_posts_per_week)
-		// }
+
+		await scheduleForOneWeek(posts.splice(0, max_per_week), channel.settings, currentWeek)
+
+		// Next week
+		currentWeek = getStartOfNextWeek(currentWeek)
 	}
-
-	// while (posts.length != postsScheduled) {
-	// 	if (await sentThisWeek(thisDate, channelId) > channel.settings.max_posts_per_week) {
-	// 		thisDate = getNextMonday(thisDate)
-	// 		continue
-	// 	}
-	// 	if (await sentThisDay(thisDate, channelId) > channel.settings.max_posts_per_day) {
-	// 		thisDate = getNextDay(thisDate)
-	// 		continue
-	// 	}
-
-	// 	// const maxMsBetweenPosts = ((24 * 60 * 60 * 1000) / channel.settings.max_posts_per_day)
-	// 	// const msLeft = differenceInMilliseconds(lastPost.sent_date, getNextDay(thisDate))
-	// 	// if (msLeft < maxMsBetweenPosts) {
-	// 	// 	thisDate = getNextDay(thisDate)
-	// 	// 	continue
-	// 	// }
-
-	// 	const fti = getFirstTimeInterval(channel)
-
-	// 	console.log(fti)
-
-	// 	postsScheduled++
-	// }
 }
 
-async function scheduleForOneDay(now: Date, lastPostSentDate: Date, settings: ChannelSettings, posts: Post[]) {
-	const nowMs = Number(now)
+async function scheduleForOneWeek(posts: Post[], settings: ChannelSettings, startOfWeek: Date) {
+	const daysToSchedule = Math.abs(differenceInDays(startOfWeek, nextDay(startOfWeek, 0))) - (settings.sleep_days?.length || 0)
+	const max_per_day = settings.max_posts_per_day
+
+	let currentDay = new Date(startOfWeek)
+	for (let i = 0; i < daysToSchedule; i++) {
+		if (posts.length < max_per_day * 2) {
+			await scheduleForOneDay(currentDay, settings, posts.splice(0, max_per_day))
+		} else {
+			const numOfPostsToSchedule = Math.ceil(posts.length / daysToSchedule)
+			await scheduleForOneDay(currentDay, settings, posts.splice(0, numOfPostsToSchedule))
+		}
+
+		currentDay = getStartOfNextDay(currentDay)
+	}
+}
+
+async function scheduleForOneDay(now: Date, settings: ChannelSettings, posts: Post[]) {
 	const sleepTime = settings.sleep_time || []
 
-	const intervals = sleepTime.map(interval => parseTimeIntervalToday(interval, nowMs))
-	// Sort intervals by time; TODO: do this when adding intervals
-	intervals.sort((first, second) => first.till - second.since)
+	const intervals = sleepTime.map(interval => parseTimeIntervalToday(interval, now))
 
-	logger.debug({ sleepTime }, 'Raw intervals')
-	logger.debug({ intervals }, 'Parsed intervals')
+	// Sort intervals by time; TODO: do this when adding intervals
+	intervals.sort((first, second) => first.till.getTime() - second.since.getTime())
+
+	// TODO: Fix overlaping intervals
+	// TODO: Fix intervals like this 23:00 - 1:00
+
+	logger.debug({ sleepTime: sleepTime }, 'Raw intervals')
+	logger.debug({ intervals: intervals }, 'Parsed intervals')
 
 	// Get available interavels
 
-	let availibleRough = 0 // in ms
-	let availibleReal = 0  // in ms
-	const availIntvls: parsedInterval[] = []
+	const freeIntervals = getFreeIntervals(intervals, now)
 
-	intervals.forEach((interval, index) => {
-		const nextInterval = intervals[index + 1]
+	// TODO: Filter too short intervals
 
-		logger.debug({ interval }, 'first interval')
-		logger.debug({ nextInterval }, 'nextInterval')
-		// Skip past intervals
-		if (nextInterval && nextInterval.since < nowMs) {
-			logger.debug({ interval, nextInterval }, 'skip!')
-			return
-		}
-
-		if (index === 0 && nowMs < interval.since) {
-			const availTimeMs = interval.since - nowMs
-			logger.debug('add ' + String(availTimeMs / 1000 / 60 / 60))
-			availibleRough += availTimeMs
-		}
-
-		if (nextInterval) {
-			const nextSince = nowMs > nextInterval.since ? nowMs : nextInterval.since
-			const availTimeMs = nextSince - interval.till
-			logger.debug('add ' + String(availTimeMs / 1000 / 60 / 60))
-			availibleRough += availTimeMs
-		} else {
-			const endOfTheDay = new Date(nowMs)
-			endOfTheDay.setUTCHours(23, 59, 59, 999)
-
-			const availTimeMs = Number(endOfTheDay) - interval.till
-			logger.debug('add ' + String(availTimeMs / 1000 / 60 / 60))
-			availibleRough += availTimeMs
-		}
+	let freeTime = 0 // ms
+	freeIntervals.forEach((interval) => {
+		freeTime += differenceInMilliseconds(interval.till, interval.since)
 	})
 
-	logger.debug(`availibleRough: ${availibleRough / 1000 / 60 / 60}`)
-
-	// Incase availible interval is too small
-	intervals.forEach((interval, index) => {
-		const nextInterval = intervals[index + 1]
-
-		// Skip past intervals
-		if (nextInterval && nextInterval.since < nowMs) return
-
-		if (index === 0 && nowMs < interval.since) {
-			const availTimeMs = interval.since - nowMs
-			if (availTimeMs > (availibleRough / posts.length) / 4) {
-				availIntvls.push({
-					since: nowMs,
-					till: interval.since
-				})
-				availibleReal += availTimeMs
-			}
-		}
-
-		if (nextInterval) {
-			const nextSince = nowMs > nextInterval.since ? nowMs : nextInterval.since
-			const availTimeMs = nextSince - interval.till
-
-			if (availTimeMs > (availibleRough / posts.length) / 4) {
-				availIntvls.push({
-					since: interval.till,
-					till: nextSince
-				})
-				availibleReal += availTimeMs
-			}
-		} else {
-			const endOfTheDay = new Date(nowMs)
-			endOfTheDay.setUTCHours(23, 59, 59, 999)
-
-			const availTimeMs = Number(endOfTheDay) - interval.till
-			if (availTimeMs > (availibleRough / posts.length) / 4) {
-				availIntvls.push({
-					since: interval.till,
-					till: Number(endOfTheDay)
-				})
-				availibleReal += availTimeMs
-			}
-		}
-	})
-
-	logger.debug(`availibleReal: ${availibleReal / 1000 / 60 / 60}`)
-	logger.debug({availIntvls}, 'Available intervals')
+	logger.debug(`freeTime: ${freeTime / 1000 / 60 / 60}`)
 
 	/*
 		TODO: add preferred time intervals
 		somehow find preferred intervals inside available intervals then do same as for available but
 		try to increase "really available time" n times to fit more posts and then decrease n times
-	*/
-	for (const interval of availIntvls) {
-		const availWithoutGapsMs = interval.till - interval.since
 
-		const postGlovalInterval = availibleReal / posts.length
+		Have to write function that finds overlaps between intervals
+		Find overlaps between preffered and availible
+		Probably split free intervals to specify preffered time
+	*/
+	for (const interval of freeIntervals) {
+		const availWithoutGapsMs = differenceInMilliseconds(interval.till, interval.since)
+
+		const postGlovalInterval = freeTime / posts.length
 		// If does not work go with ceil
 		const postsToFit = Math.round(availWithoutGapsMs / postGlovalInterval)
 
@@ -214,32 +193,80 @@ async function scheduleForOneDay(now: Date, lastPostSentDate: Date, settings: Ch
 
 		const postInterval = available / postsToFit
 
-		let lastScheduledDate = interval.since
+		let lastScheduledDateMs = interval.since.getTime()
 
 		for (const post of posts) {
 			let finalDate
 			if (posts.indexOf(post) === 0) {
-				finalDate = lastScheduledDate + gap
+				finalDate = lastScheduledDateMs + gap
 			} else {
-				finalDate = lastScheduledDate + postInterval
+				finalDate = lastScheduledDateMs + postInterval
 			}
 
 			// TODO: set scheduled date for messages?
 			post.scheduled_sent_date = new Date(finalDate)
 			await post.save()
 
-			lastScheduledDate = finalDate
+			lastScheduledDateMs = finalDate
 		}
 	}
 }
 
-interface parsedInterval {
-	since: number,
-	till: number
+/*
+ * Get inverse intervals from now till end of the day
+ *
+ * @param now - date for from which intervals will be taken into account
+ *
+ * @param sleepIntevals - parsedInterval without overlaps,
+ *                        with time within day of given date
+ *
+ * example:
+ *     input:  [{ since: new Date('2/1/22 2:00'), till: new Date('2/1/22 10:00')}], new Date('2/1/22 1:00')
+ *     output: [
+ *         { since: 2022-02-01T01:00:00.000Z, till: 2022-02-01T02:00:00.000Z },
+ *         { since: 2022-02-01T10:00:00.000Z, till: 2022-02-02T00:00:00.000Z }
+ *     ]
+ */
+export function getFreeIntervals(sleepIntervals: parsedInterval[], now: Date) {
+	if (!sleepIntervals.length) return [
+		{ since: startOfDay(now), till: startOfDay(addDays(now, 1)) }
+	]
+
+	const freeIntervals: parsedInterval[] = []
+
+	sleepIntervals.forEach((current, index) => {
+		const previous = sleepIntervals[index - 1] || { since: startOfDay(now), till: startOfDay(now) }
+		const next = sleepIntervals[index + 1] || { since: startOfDay(addDays(now, 1)), till: startOfDay(addDays(now, 1)) }
+
+		// TODO: Simplify
+		if (isAfter(now, current.till))
+			return
+
+		if (isAfter(now, current.since))
+			return
+
+		if (isBefore(now, previous.till)) {
+			freeIntervals.push({ since: previous.till, till: current.since })
+		} else {
+			freeIntervals.push({ since: now, till: current.since })
+			if (index === sleepIntervals.length - 1) {
+				freeIntervals.push({ since: current.till, till: next.since })
+			}
+			return
+		}
+
+		freeIntervals.push({ since: current.till, till: next.since })
+	})
+
+	return freeIntervals
+}
+export interface parsedInterval {
+	since: Date,
+	till: Date
 }
 
-function parseTimeIntervalToday(interval: TimeIntervalSchema, nowMs: number): parsedInterval {
-	const dateSince = new Date(nowMs)
+function parseTimeIntervalToday(interval: TimeIntervalSchema, now: Date | number): parsedInterval {
+	const dateSince = new Date(Number(now))
 
 	dateSince.setUTCHours(
 		Number(interval.since.split(':')[0]),
@@ -248,7 +275,7 @@ function parseTimeIntervalToday(interval: TimeIntervalSchema, nowMs: number): pa
 		0
 	)
 
-	const dateTill = new Date(nowMs)
+	const dateTill = new Date(Number(now))
 	dateTill.setUTCHours(
 		Number(interval.till.split(':')[0]),
 		Number(interval.till.split(':')[1]),
@@ -256,111 +283,21 @@ function parseTimeIntervalToday(interval: TimeIntervalSchema, nowMs: number): pa
 		0
 	)
 
-	return { since: Number(dateSince), till: Number(dateTill) }
+	return { since: dateSince, till: dateTill }
 }
 
-// interface TimeInterval {
-// 	since: { hours: number, minutes: number }
-// 	till: { hours: number, minutes: number }
-// 	duration: number
-// }
+function freeTimeInNewDay(intervals: parsedInterval[], date: Date) {
+	const dayStart = new Date(date.getTime()).setUTCHours(0, 0, 0, 0)
+	return getFreeIntervals(intervals, new Date(dayStart))
+}
 
-// function getFirstTimeInterval(channel: Channel): TimeInterval {
-// 	if (!channel.settings.sleep_time)
-// 		return {
-// 			since: { hours: 0, minutes: 0 },
-// 			till: { hours: 24, minutes: 0 },
-// 			duration: 24 * 60
-// 		}
+function getStartOfNextWeek (date: Date): Date {
+	return new Date(nextDay(date, 1).setUTCHours(0, 0, 0, 0))
+}
 
-// 	const eAT: TimeInterval = {
-// 		since: { hours: NaN, minutes: NaN },
-// 		till: { hours: NaN, minutes: NaN },
-// 		duration: NaN
-// 	}
-
-// 	for (const interval of channel.settings.sleep_time) {
-// 		const hoursSince = Number(interval.since.split(':')[0])
-// 		const minutesSince = Number(interval.since.split(':')[1])
-
-// 		if (hoursSince < eAT.since.hours) eAT.since.hours = hoursSince
-// 		if (minutesSince < eAT.since.minutes) eAT.since.minutes = minutesSince
-// 	}
-
-// 	// TODO: check if this works:
-// 	eAT.duration = (eAT.till.hours - eAT.since.hours) * 60 + +(eAT.till.minutes - eAT.since.minutes)
-
-// 	return eAT
-// }
-
-// function getNextMonday(date: Date) {
-// 	const day = date.getDay()
-
-// 	date.setHours(0) // WARN UTC
-// 	date.setMinutes(0)
-// 	date.setSeconds(0)
-// 	date.setMilliseconds(0)
-
-// 	if (day === 1) {
-// 		date.setDate(date.getDate() + 7)
-// 	} else if (day === 0) {
-// 		date.setDate(date.getDate() + (7 - date.getDay() + 1))
-// 	}
-// 	return date
-// }
-
-function getNextDay(date: Date): Date {
+function getStartOfNextDay(date: Date): Date {
 	const newDate = new Date(Number(date))
 	newDate.setUTCDate(date.getDate() + 1)
 	newDate.setUTCHours(0, 0, 0, 0)
 	return newDate
 }
-
-// async function sentThisWeek(date: Date, channelId: number): Promise<number> {
-// 	const previousMonday = getPreviousMonday(date)
-
-// 	try {
-// 		return await postModel.countDocuments({
-// 			channel_id: channelId,
-// 			sent_date: { $lt: date, $gt: previousMonday }
-// 		})
-// 	} catch (error) {
-// 		throw new Werror(error, 'Counting documents for this week')
-// 	}
-// }
-
-// async function sentThisDay(date: Date, channelId: number): Promise<number> {
-// 	const startOfTheDay = date
-
-// 	startOfTheDay.setHours(0) // WARN UTC
-// 	startOfTheDay.setMinutes(0)
-// 	startOfTheDay.setSeconds(0)
-// 	startOfTheDay.setMilliseconds(0)
-
-// 	try {
-// 		return await postModel.countDocuments({
-// 			channel_id: channelId,
-// 			sent_date: { $lt: date, $gt: startOfTheDay }
-// 		})
-// 	} catch (error) {
-// 		throw new Werror(error, 'Counting documents for this week')
-// 	}
-// }
-
-// function getPreviousMonday(date: Date): Date {
-// 	const day = date.getDay()
-
-// 	date.setHours(0) // WARN UTC
-// 	date.setMinutes(0)
-// 	date.setSeconds(0)
-// 	date.setMilliseconds(0)
-
-// 	if (day === 1) {
-// 		date.setDate(date.getDate() - 7)
-// 	} else if (day === 0) {
-// 		date.setDate(date.getDate() - 6)
-// 	} else {
-// 		date.setDate(date.getDate() - (date.getDay() - 1))
-// 	}
-// 	return date
-// }
